@@ -1,6 +1,8 @@
 package my_project.control;
 
 import KAGO_framework.control.ViewController;
+import my_project.view.Visual2DArray;
+import my_project.view.example.Ball;
 
 /**
  * Ein Objekt der Klasse ProgramController dient dazu das Programm zu steuern. Die updateProgram - Methode wird
@@ -8,11 +10,8 @@ import KAGO_framework.control.ViewController;
  */
 public class ProgramController {
 
-    //Attribute
 
-
-    // Referenzen
-    private ViewController viewController;  // diese Referenz soll auf ein Objekt der Klasse viewController zeigen. Über dieses Objekt wird das Fenster gesteuert.
+    private final ViewController viewController;  // diese Referenz soll auf ein Objekt der Klasse viewController zeigen. Über dieses Objekt wird das Fenster gesteuert.
 
     /**
      * Konstruktor
@@ -30,14 +29,14 @@ public class ProgramController {
      * Sie erstellt die leeren Datenstrukturen, zu Beginn nur eine Queue
      */
     public void startProgram() {
-
+        var arr = new Visual2DArray<Ball>(10, 10);
+        arr.set(new Ball(), 10,10);
+        viewController.draw(arr);
     }
 
     /**
      * Aufruf mit jeder Frame
      * @param dt Zeit seit letzter Frame
      */
-    public void updateProgram(double dt){
-
-    }
+    public void updateProgram(double dt){}
 }
