@@ -9,7 +9,7 @@ public class Ball extends GraphicalObject implements Animatable {
     private int alpha;
 
     public Ball() {
-        width = 20;
+        width = 5;
         height = 20;
         alpha = 255;
     }
@@ -25,12 +25,12 @@ public class Ball extends GraphicalObject implements Animatable {
     }
 
     @Override
-    public void fadeIn(double dt) {
+    public void fadeIn() {
 
     }
 
     @Override
-    public void fadeOut(double dt) {
+    public void fadeOut() {
 
     }
 }

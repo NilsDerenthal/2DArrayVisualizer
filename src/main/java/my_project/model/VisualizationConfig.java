@@ -20,9 +20,18 @@ public class VisualizationConfig {
             drawOutline = true,
             fitObjectSize = false,
             dynamicResizing = false;
+
+    @Builder.Default
+    private final Color
+            pointerBackgroundColor = Color.GRAY,
+            gridOutLineColor = Color.BLACK,
+            backgroundColor = Color.WHITE;
 }
+
+
  */
 
+import java.awt.*;
 
 public class VisualizationConfig {
     private final int
@@ -35,9 +44,24 @@ public class VisualizationConfig {
     private final boolean
             drawOutline,
             fitObjectSize,
-            dynamicResizing;
+            dynamicResizing,
+            traversable;
 
-    public VisualizationConfig(int x, int y, int cellWidth, int cellHeight, int margin, boolean drawOutline, boolean fitObjectSize, boolean dynamicResizing) {
+    private final Color
+            pointerBackgroundColor,
+            gridOutLineColor,
+            backgroundColor;
+
+    public VisualizationConfig(int x, int y,
+                               int cellWidth, int cellHeight,
+                               int margin,
+                               boolean drawOutline,
+                               boolean fitObjectSize,
+                               boolean dynamicResizing,
+                               boolean traversable,
+                               Color pointerBackgroundColor,
+                               Color gridOutLineColor,
+                               Color backgroundColor) {
         this.x = x;
         this.y = y;
         this.cellWidth = cellWidth;
@@ -46,10 +70,14 @@ public class VisualizationConfig {
         this.drawOutline = drawOutline;
         this.fitObjectSize = fitObjectSize;
         this.dynamicResizing = dynamicResizing;
+        this.traversable = traversable;
+        this.pointerBackgroundColor = pointerBackgroundColor;
+        this.gridOutLineColor = gridOutLineColor;
+        this.backgroundColor = backgroundColor;
     }
 
     public VisualizationConfig() {
-        this(30, 30, 20, 20, 5, true, true, true);
+        this(30, 30, 20, 20, 5, true, true, true, true, Color.GRAY, Color.BLACK, Color.WHITE);
     }
 
     public int getX() {
@@ -82,6 +110,22 @@ public class VisualizationConfig {
 
     public boolean isDynamicResizing() {
         return dynamicResizing;
+    }
+
+    public boolean isTraversable() {
+        return traversable;
+    }
+
+    public Color getPointerBackgroundColor() {
+        return pointerBackgroundColor;
+    }
+
+    public Color getGridOutLineColor() {
+        return gridOutLineColor;
+    }
+
+    public Color getBackgroundColor() {
+        return backgroundColor;
     }
 }
 

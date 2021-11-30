@@ -30,7 +30,8 @@ public class ProgramController {
      */
     public void startProgram() {
         var arr = new Visual2DArray<Ball>(10, 10);
-        arr.set(new Ball(), 10,10);
+        arr.set(new Ball(), 8, 8);
+        arr.set(new Ball(), 4, 5);
         viewController.draw(arr);
     }
 
