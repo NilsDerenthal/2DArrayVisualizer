@@ -9,8 +9,8 @@ public class Ball extends GraphicalObject implements Animatable {
     private int alpha;
 
     public Ball() {
-        width = 5;
-        height = 20;
+        width = 30;
+        height = 40;
         alpha = 255;
     }
 

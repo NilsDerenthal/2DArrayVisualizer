@@ -29,10 +29,11 @@ public class ProgramController {
      * Sie erstellt die leeren Datenstrukturen, zu Beginn nur eine Queue
      */
     public void startProgram() {
-        var arr = new Visual2DArray<Ball>(10, 10);
-        arr.set(new Ball(), 8, 8);
-        arr.set(new Ball(), 4, 5);
+        var arr = new Visual2DArray<Ball>(2, 2);
+        arr.set(new Ball(), 1, 1);
+        arr.set(new Ball(), 0, 1);
         viewController.draw(arr);
+        viewController.register(arr);
     }
 
     /**

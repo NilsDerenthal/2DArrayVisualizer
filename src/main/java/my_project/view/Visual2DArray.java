@@ -3,13 +3,17 @@ package my_project.view;
 import KAGO_framework.control.Interactable;
 import KAGO_framework.model.GraphicalObject;
 import KAGO_framework.view.DrawTool;
-import lombok.NonNull;
 import my_project.model.Animatable;
 import my_project.model.VisualizationConfig;
 
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.net.http.HttpConnectTimeoutException;
+import java.util.Arrays;
+import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 
 
 public class Visual2DArray<T extends GraphicalObject & Animatable> extends GraphicalObject implements Interactable {
@@ -19,20 +23,20 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
 
     private int xPointer, yPointer;
 
-    public Visual2DArray(int width, int height, int startPointerX, int startPointerY, @NonNull VisualizationConfig config) {
+    public Visual2DArray(int width, int height, int startPointerX, int startPointerY, VisualizationConfig config) {
         this.config = config;
         this.internalRepresentation = getArray(width, height);
 
         // copy config into main
         this.x = config.getX();
         this.y = config.getY();
+
         if (!config.isFitObjectSize()) {
             this.width = config.getCellWidth() * width;
             this.height = config.getCellHeight() * height;
         }
-        this.xPointer = startPointerX;
-        this.yPointer = startPointerY;
-        checkOOB();
+
+        setPointer(startPointerX, startPointerY);
     }
 
     public Visual2DArray(int width, int height) {
@@ -74,7 +78,7 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         checkOOB();
     }
 
-    private void forEach(@NonNull BiConsumer<Integer, Integer> action) {
+    private void forEach(BiConsumer<Integer, Integer> action) {
         for (int i = 0; i < internalRepresentation.length; i++) {
             for (int j = 0; j < internalRepresentation[i].length; j++) {
                 action.accept(i, j);
@@ -84,34 +88,33 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
 
     @Override
     public void draw(DrawTool drawTool) {
-        int cellWidth = config.getCellWidth();
-        int cellHeight = config.getCellHeight();
+        double cellWidth = config.getCellWidth();
+        double cellHeight = config.getCellHeight();
 
         if (config.isFitObjectSize()) {
             // obtain biggest element
-            AtomicInteger
-                    maxW = new AtomicInteger(),
-                    maxH = new AtomicInteger();
+            Function<ToDoubleFunction<T>, OptionalDouble> supplier = func -> Arrays
+                    .stream(internalRepresentation)
+                    .flatMapToDouble(array -> Arrays.stream(array).mapToDouble(value -> value == null ? 0 : func.applyAsDouble(value)))
+                    .max();
 
-            forEach((i, j) -> {
-                if (internalRepresentation[i][j] != null) {
-                    maxW.set((int) Math.max(maxW.get(), internalRepresentation[i][j].getWidth()));
-                    maxH.set((int) Math.max(maxH.get(), internalRepresentation[i][j].getHeight()));
-                }
-            });
+            var w = supplier.apply(T::getWidth);
+            if (w.isPresent())
+                cellWidth = w.getAsDouble();
 
-            cellWidth = maxW.get();
-            cellHeight = maxH.get();
+            var h = supplier.apply(T::getHeight);
+            if (h.isPresent())
+                cellHeight = h.getAsDouble();
         }
 
 
         // lambda
-        int finalCellWidth = cellWidth + config.getMargin() * 2;
-        int finalCellHeight = cellHeight + config.getMargin() * 2;
+        double finalCellWidth = cellWidth + config.getMargin() * 2;
+        double finalCellHeight = cellHeight + config.getMargin() * 2;
 
         forEach((i, j) -> {
-            int x = i * finalCellWidth + config.getX() + config.getMargin();
-            int y = j * finalCellHeight + config.getY() + config.getMargin();
+            double x = i * finalCellWidth + config.getX() + config.getMargin();
+            double y = j * finalCellHeight + config.getY() + config.getMargin();
 
             // grid
             if (config.isDrawOutline()) {
@@ -130,6 +133,7 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
 
             // object(s)
             T visualObj = internalRepresentation[i][j];
+
             if (visualObj != null) {
                 visualObj.setX(x + config.getMargin());
                 visualObj.setY(y + config.getMargin());
@@ -143,11 +147,16 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
 
     }
 
-    // Interactable methods
+    // interactable implementation
 
     @Override
     public void keyPressed(int key) {
-
+        switch (key) {
+            case KeyEvent.VK_LEFT -> xPointer--;
+            case KeyEvent.VK_RIGHT -> xPointer++;
+            case KeyEvent.VK_DOWN -> yPointer++;
+            case KeyEvent.VK_UP -> yPointer--;
+        }
     }
 
     @Override
