@@ -2,6 +2,7 @@ package my_project.view;
 
 import KAGO_framework.control.Interactable;
 import KAGO_framework.model.GraphicalObject;
+import KAGO_framework.model.abitur.datenstrukturen.List;
 import KAGO_framework.view.DrawTool;
 import my_project.model.Animatable;
 import my_project.model.VisualizationConfig;
@@ -12,6 +13,7 @@ import java.net.http.HttpConnectTimeoutException;
 import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -23,9 +25,12 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
 
     private int xPointer, yPointer;
 
+    private List<Interactable> controllers;
+
     public Visual2DArray(int width, int height, int startPointerX, int startPointerY, VisualizationConfig config) {
         this.config = config;
         this.internalRepresentation = getArray(width, height);
+        controllers = new List<>();
 
         // copy config into main
         this.x = config.getX();
@@ -43,12 +48,9 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         this(width, height, 0, 0, new VisualizationConfig());
     }
 
-    private void checkOOB() {
-        if (yPointer >= internalRepresentation.length || yPointer < 0) {
-            throw new IndexOutOfBoundsException(yPointer + " out of bounds for size " + internalRepresentation.length);
-        } else if (xPointer >= internalRepresentation[0].length || xPointer < 0) {
-            throw new IndexOutOfBoundsException(xPointer + " out of bounds for size " + internalRepresentation[0].length);
-        }
+    private boolean isLegal(int x, int y) {
+        return y >= 0 && x >= 0 &&
+                x < internalRepresentation.length && y < internalRepresentation[0].length;
     }
 
     @SuppressWarnings("unchecked")
@@ -57,15 +59,19 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
     }
 
     public void set(T value, int x, int y) {
-        if (value != null) {
-            value.fadeIn();
-        }
+        if (isLegal(x, y)) {
+            if (value != null) {
+                value.fadeIn();
+            }
 
-        if (internalRepresentation[x][y] != null) {
-            internalRepresentation[x][y].fadeOut();
-        }
+            if (internalRepresentation[x][y] != null) {
+                internalRepresentation[x][y].fadeOut();
+            }
 
-        internalRepresentation[x][y] = value;
+            internalRepresentation[x][y] = value;
+        } else {
+            throw new IndexOutOfBoundsException();
+        }
     }
 
     public void set(T value) {
@@ -73,9 +79,10 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
     }
 
     public void setPointer(int x, int y) {
-        xPointer = x;
-        yPointer = y;
-        checkOOB();
+        if (isLegal(x, y)) {
+            xPointer = x;
+            yPointer = y;
+        }
     }
 
     private void forEach(BiConsumer<Integer, Integer> action) {
@@ -142,50 +149,55 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         });
     }
 
-    @Override
-    public void update(double dt) {
-
+    public void addController(Interactable i) {
+        if (this == i) {
+            throw new RuntimeException("Cannot register yourself");
+        }
+        controllers.append(i);
     }
 
     // interactable implementation
 
-    @Override
-    public void keyPressed(int key) {
-        switch (key) {
-            case KeyEvent.VK_LEFT -> xPointer--;
-            case KeyEvent.VK_RIGHT -> xPointer++;
-            case KeyEvent.VK_DOWN -> yPointer++;
-            case KeyEvent.VK_UP -> yPointer--;
+    private void forEachController(Consumer<Interactable> c) {
+        controllers.toFirst();
+        while (controllers.hasAccess()) {
+            c.accept(controllers.getContent());
+            controllers.next();
         }
     }
 
     @Override
-    public void keyReleased(int key) {
+    public void keyPressed(int key) {
+        forEachController(i -> i.keyPressed(key));
+    }
 
+    @Override
+    public void keyReleased(int key) {
+        forEachController(i -> i.keyReleased(key));
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-
+        forEachController(i -> i.mouseReleased(e));
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-
+        forEachController(i -> i.mouseClicked(e));
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-
+        forEachController(i -> i.mouseDragged(e));
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-
+        forEachController(i -> i.mouseMoved(e));
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
-
+        forEachController(i -> i.mousePressed(e));
     }
 }

@@ -1,8 +1,12 @@
 package my_project.control;
 
+import KAGO_framework.control.Interactable;
 import KAGO_framework.control.ViewController;
+import my_project.model.InteractableAdapter;
 import my_project.view.Visual2DArray;
 import my_project.view.example.Ball;
+
+import java.awt.event.MouseEvent;
 
 /**
  * Ein Objekt der Klasse ProgramController dient dazu das Programm zu steuern. Die updateProgram - Methode wird
@@ -29,11 +33,20 @@ public class ProgramController {
      * Sie erstellt die leeren Datenstrukturen, zu Beginn nur eine Queue
      */
     public void startProgram() {
-        var arr = new Visual2DArray<Ball>(2, 2);
-        arr.set(new Ball(), 1, 1);
+        var arr = new Visual2DArray<Ball>(5, 10);
+        arr.set(new Ball(), 2, 4);
         arr.set(new Ball(), 0, 1);
         viewController.draw(arr);
         viewController.register(arr);
+
+        arr.addController(new InteractableAdapter() {
+            @Override
+            public void keyPressed(int key) {
+                switch (key) {
+                    // too bored
+                }
+            }
+        });
     }
 
     /**
@@ -41,4 +54,6 @@ public class ProgramController {
      * @param dt Zeit seit letzter Frame
      */
     public void updateProgram(double dt){}
+
+    public void mouseClicked(MouseEvent e){}
 }
