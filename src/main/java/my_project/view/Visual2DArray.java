@@ -4,12 +4,10 @@ import KAGO_framework.control.Interactable;
 import KAGO_framework.model.GraphicalObject;
 import KAGO_framework.model.abitur.datenstrukturen.List;
 import KAGO_framework.view.DrawTool;
-import my_project.model.Animatable;
-import my_project.model.VisualizationConfig;
 
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.net.http.HttpConnectTimeoutException;
 import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
@@ -18,15 +16,188 @@ import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
 
-public class Visual2DArray<T extends GraphicalObject & Animatable> extends GraphicalObject implements Interactable {
+public class Visual2DArray<T extends GraphicalObject & Visual2DArray.Animatable> extends GraphicalObject implements Interactable {
+
+    /**
+     * Configuration for the visualization
+     */
+    public static class VisualizationConfig {
+        private final int
+                x,
+                y,
+                cellWidth,
+                cellHeight,
+                margin;
+
+        private final boolean
+                drawOutline,
+                fitObjectSize,
+                traversable;
+
+        private final Color
+                pointerBackgroundColor,
+                gridOutLineColor,
+                backgroundColor;
+
+        /**
+         * Creates a configuration
+         * @param x the x-coordinate
+         * @param y the y-coordinate
+         * @param cellWidth the width of a cell
+         * @param cellHeight the height of a cell
+         * @param margin the margin of each cell
+         * @param drawOutline if the outline should be drawn or not
+         * @param fitObjectSize if the cell-size should depend on the biggest object
+         * @param traversable if the pointer should be drawn
+         * @param pointerBackgroundColor the background color of the pointer
+         * @param gridOutLineColor the outline color
+         * @param backgroundColor the background color of the cell
+         */
+        public VisualizationConfig(int x, int y,
+                                   int cellWidth, int cellHeight,
+                                   int margin,
+                                   boolean drawOutline,
+                                   boolean fitObjectSize,
+                                   boolean traversable,
+                                   Color pointerBackgroundColor,
+                                   Color gridOutLineColor,
+                                   Color backgroundColor) {
+            this.x = x;
+            this.y = y;
+            this.cellWidth = cellWidth;
+            this.cellHeight = cellHeight;
+            this.margin = margin;
+            this.drawOutline = drawOutline;
+            this.fitObjectSize = fitObjectSize;
+            this.traversable = traversable;
+            this.pointerBackgroundColor = pointerBackgroundColor;
+            this.gridOutLineColor = gridOutLineColor;
+            this.backgroundColor = backgroundColor;
+        }
+
+        /**
+         * Constructs a default config.
+         * x and y -> 30;
+         * width and height -> 20;
+         * margin -> 5;
+         * draw-outline, fit-object-size, traversable -> true;
+         * pointer-color -> Gray;
+         * grid-outline-color -> Black;
+         * background-color -> white;
+         */
+        public VisualizationConfig() {
+            this(30, 30, 20, 20, 5, true, true, true, Color.GRAY, Color.BLACK, Color.WHITE);
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getY() {
+            return y;
+        }
+
+        public int getCellWidth() {
+            return cellWidth;
+        }
+
+        public int getCellHeight() {
+            return cellHeight;
+        }
+
+        public int getMargin() {
+            return margin;
+        }
+
+        public boolean isDrawOutline() {
+            return drawOutline;
+        }
+
+        public boolean isFitObjectSize() {
+            return fitObjectSize;
+        }
+
+        public boolean isTraversable() {
+            return traversable;
+        }
+
+        public Color getPointerBackgroundColor() {
+            return pointerBackgroundColor;
+        }
+
+        public Color getGridOutLineColor() {
+            return gridOutLineColor;
+        }
+
+        public Color getBackgroundColor() {
+            return backgroundColor;
+        }
+    }
+
+    /**
+     * Adapter for the Interactable interface
+     */
+    public abstract static class InteractableAdapter implements Interactable {
+        @Override
+        public void keyPressed(int key) {}
+
+        @Override
+        public void keyReleased(int key) {}
+
+        @Override
+        public void mouseReleased(MouseEvent e) {}
+
+        @Override
+        public void mouseClicked(MouseEvent e) {}
+
+        @Override
+        public void mouseDragged(MouseEvent e) {}
+
+        @Override
+        public void mouseMoved(MouseEvent e) {}
+
+        @Override
+        public void mousePressed(MouseEvent e) {}
+    }
+
+    /**
+     * An interface to force animations onto an Object
+     */
+    public interface Animatable {
+        void fadeIn();
+        void fadeOut();
+    }
+
+    /**
+     * The default movement controller
+     */
+    public final Interactable defaultMovement = new InteractableAdapter() {
+        @Override
+        public void keyPressed(int key) {
+            switch (key) {
+                case KeyEvent.VK_RIGHT -> setPointer(getPointerX() + 1, getPointerY());
+                case KeyEvent.VK_LEFT -> setPointer(getPointerX() - 1, getPointerY());
+                case KeyEvent.VK_UP -> setPointer(getPointerX(), getPointerY() - 1);
+                case KeyEvent.VK_DOWN -> setPointer(getPointerX(), getPointerY() + 1);
+            }
+        }
+    };
 
     private final T[][] internalRepresentation;
     private final VisualizationConfig config;
 
     private int xPointer, yPointer;
 
-    private List<Interactable> controllers;
+    private final List<Interactable> controllers;
 
+    /**
+     * Constructs a new Visual 2D array with the given specs
+     * @param width the width of the list (cells)
+     * @param height the height of the list (cells)
+     * @param startPointerX the origin of the x-pointer
+     * @param startPointerY the origin of the y-pointer
+     * @param config the configuration
+     */
     public Visual2DArray(int width, int height, int startPointerX, int startPointerY, VisualizationConfig config) {
         this.config = config;
         this.internalRepresentation = getArray(width, height);
@@ -44,6 +215,12 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         setPointer(startPointerX, startPointerY);
     }
 
+    /**
+     * Constructs a new Visual 2D array with the given width and height.
+     * The pointer is set to (0, 0) by default as well as a default config
+     * @param width the width of the list (cells)
+     * @param height the height of the list (cells)
+     */
     public Visual2DArray(int width, int height) {
         this(width, height, 0, 0, new VisualizationConfig());
     }
@@ -58,6 +235,12 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         return (T[][]) new GraphicalObject[width][height];
     }
 
+    /**
+     * Sets the value at the given indecies.
+     * @param value the value at the given values. Can be null which removes the object
+     * @param x the x index for this object to be inserted at.
+     * @param y the y index for this object to be inserted at.
+     */
     public void set(T value, int x, int y) {
         if (isLegal(x, y)) {
             if (value != null) {
@@ -74,10 +257,19 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         }
     }
 
+    /**
+     * Sets the value at the current pointer.
+     * @param value the value to be set. Can be null which removes the Object
+     */
     public void set(T value) {
         set(value, xPointer, yPointer);
     }
 
+    /**
+     * Sets the pointer to this x and y index if it is a valid coordinate
+     * @param x the x-pointer
+     * @param y the y-pointer
+     */
     public void setPointer(int x, int y) {
         if (isLegal(x, y)) {
             xPointer = x;
@@ -93,6 +285,10 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         }
     }
 
+    /**
+     * Draws the Array. Not to be called manually!!
+     * @param drawTool the drawTool
+     */
     @Override
     public void draw(DrawTool drawTool) {
         double cellWidth = config.getCellWidth();
@@ -149,11 +345,29 @@ public class Visual2DArray<T extends GraphicalObject & Animatable> extends Graph
         });
     }
 
+    /**
+     * Add a controller to this array.
+     * @param i the new controller
+     */
     public void addController(Interactable i) {
         if (this == i) {
             throw new RuntimeException("Cannot register yourself");
         }
         controllers.append(i);
+    }
+
+    /**
+     * @return the current x-pointer value
+     */
+    public int getPointerX() {
+        return xPointer;
+    }
+
+    /**
+     * @return the current x-pointer value
+     */
+    public int getPointerY() {
+        return yPointer;
     }
 
     // interactable implementation
